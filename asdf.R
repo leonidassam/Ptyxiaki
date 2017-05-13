@@ -2,8 +2,17 @@ library( igraph )
 source( "PCI.R")
 
 londonData <- read.table( './London_Multiplex_Transport/Dataset/london_transport_multiplex.edges', header = FALSE )
-londonDataEdges <- londonData[,2:3]
-print( londonDataEdges)
+londonDataEdgeList <- londonData[,2:3]
+weight <- londonData[,4]
+print( weight)
+
+londonDataEdgeList <- londonDataEdgeList[,] + 1
+matrixLondonDataEdgeList <- data.matrix( londonDataEdgeList)
+g <- graph_from_edgelist( matrixLondonDataEdgeList, directed = TRUE)
+
+E(g)$weights <- weight
+plot( g, layout = layout_( g, as_star()), edge.label = E(g)$weights)
+
 
 
 if( FALSE) {
