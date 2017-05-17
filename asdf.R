@@ -36,8 +36,20 @@ E(g)$weights <- weight
 
 
 
-degrees <- data.frame( degree( firstLayerGraph, v = V(firstLayerGraph), mode = c( "all"), loops = FALSE, normalized = FALSE), ncol = 1)
-sortedDegrees <- data.frame( order( degrees, decreasing = TRUE))
+
+degrees <- degree( firstLayerGraph, mode = c( "out"))
+vectroIds <- vector()
+vectorDegrees <- vector()
+for( i in 1:length( degrees)) {
+	if( degrees[i] != 0 ) {
+		vectroIds <- c( vectroIds, i)
+		vectorDegrees <- c( vectorDegrees, degrees[i])
+	}
+}
+degreesDf <- data.frame( vectroIds, vectorDegrees)
+degreesDf <- degreesDf[ order(  -degreesDf[,2] ), ]
+print( degreesDf)
+
 
 # plots
 if( FALSE) {
