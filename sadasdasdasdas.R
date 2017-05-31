@@ -1,62 +1,69 @@
 library( igraph )
 
-Data <- read.csv( 'Network.csv', header = FALSE )
+setwd("C:/Users/Antonios/Desktop/leonidas/Διπλωματική/Ptyxiaki-master")
+Data <- read.csv( "./Network.csv", header = FALSE )
 DataEdgeList <- Data[,1:2]
 g <- graph_from_edgelist( data.matrix( DataEdgeList), directed = TRUE)
 
-# get all shortest paths from network
+# List with all shortest paths from network
 allShortestPaths <- list()
 for( i in V(g)) {
   sps <- list()
   for( j in V(g)) {
     if( i != j ) {
-      sps[i] <- shortest_paths( g, i, j, mode = c("out"), output = c("vpath"))
-      allShortestPaths <- c( allShortestPaths, sps[[i]])
+      sps <- shortest_paths( g, i, j, mode = c("out"))
+      if( length( sps[[1]][[1]]) > 0 ) {
+        allShortestPaths <- c( allShortestPaths, sps[[1]])
+      }
     }
   }
 }
 
-
+# For each node get every shortest path. Add them to a list ( duplicates exist )
 partialShortestPaths <- list()
 for( j in V(g)) {
   nodeOut <- shortest_paths( g, j, mode = c( "out"))
   nodeIn <- shortest_paths( g, j, mode = c( "in"))
   
+  # out shortest paths of node
   for( i in 1:length( nodeOut[[1]])) {
     first <- list( unlist( nodeOut[[1]][[i]]))
-    if( length( first[[1]]) > 1 ) {  partialShortestPaths <- c( partialShortestPaths, first) }
+    # shortest paths with more than two nodes
+    if( length( first[[1]]) > 1 ) {
+      if( length( partialShortestPaths) > 0 ) {
+        # check for duplicates
+        k <- 0 
+        for( x in 1:length( partialShortestPaths)) {
+          second <- list( unlist( partialShortestPaths[[x]]))
+          if( identical( unlist( first), unlist( second))) {  
+            k <- 1
+            break
+          }
+        }
+        if( k == 0 ) { partialShortestPaths <- c( partialShortestPaths, first)  }
+      }
+      else {
+        partialShortestPaths <- c( partialShortestPaths, first) 
+      }
+    }
   }
+  
+  
+  # in shortest paths of node 
   for( i in 1:length( nodeIn[[1]])) {
     first <- list( unlist( nodeIn[[1]][[i]]))
+    # shortest paths with more than two nodes
     if( length( first[[1]]) > 1 ) {  
       reverse <- list( rev( first[[1]]))
-      partialShortestPaths <- c( partialShortestPaths, reverse) 
-    }
+      # check for duplicates
+      k <- 0 
+      for( x in 1:length( partialShortestPaths)) {
+        second <- list( unlist( partialShortestPaths[[x]]))
+        if( identical( unlist( reverse), unlist( second))) {  k <- 1 }
+      }
+      if( k == 0 ) { partialShortestPaths <- c( partialShortestPaths, reverse) }
+      }
   }
+  percentage <- length( partialShortestPaths)/length( allShortestPaths)
+  print( percentage)
 }
-
-partialShortestPathsUnique <- list()
-partialShortestPathsUnique <- partialShortestPaths
-for( x in 1:length( partialShortestPaths)) {
-  firstList <- list( partialShortestPaths[[x]])
-  for( y in x:length( partialShortestPaths)) {
-    secondList <- list( partialShortestPaths[[y]])
-    if( identical( unlist( firstList), unlist( secondList))) {
-      partialShortestPathsUnique[y] <- NULL
-    }
-  }
-}
-
-percentage <- length( partialShortestPathsUnique)/length( allShortestPaths)
-print( percentage)
-
-node1In <- shortest_paths( g, 1, mode = c( "in"))
-node2Out <- shortest_paths( g, 2, mode = c( "out"))
-qwer <- list( node1In[[1]][[2]])
-re <- list( rev( node2Out[[1]][[1]]))
-alist <- list()
-alist <- c( alist, qwer)
-alist <- c( alist, re)
-alistunique <- unlist( alist)
-alistunique <- list( unique( alistunique))
-print( alistunique)
