@@ -48,7 +48,7 @@ vectroIds <- vector( mode = "numeric", length = length( degrees))
 vectorDegrees <- vector( mode = "numeric", length = length( degrees))
 for( i in V( allLayers)) {
   vectroIds[i] <- i
-  vectorDegrees[i] <- degrees[i]
+  vectorDegrees[i] <- degrees[[i]]
 }
 degreesDf <- data.frame( vectroIds, vectorDegrees)
 degreesDf <- degreesDf[ order( degreesDf[,2] ), ]

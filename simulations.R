@@ -1,14 +1,8 @@
-library( igraph )
+library( igraph)
 source( "Functions.R")
 
-# read the data
-Data <- read.csv( "./Network.csv", header = FALSE )
-DataEdgeList <- Data[,1:2]
-g <- graph_from_edgelist( data.matrix( DataEdgeList), directed = TRUE)
+g <- sample_gnm( 30, 50, directed = TRUE, loops = FALSE)
 
-
-
-# Lists with all shortest paths from network
 allShortestPaths <- list()
 allShortestPathsComplete <- list()
 for( i in V( g)) {
@@ -33,11 +27,9 @@ for( i in V( g)) {
   }
 }
 
-
-
-  #
-  # calculate the cover rate function based on highest betweenness 
-  #
+#
+# calculate the cover rate function based on highest betweenness 
+#
 betweennessCentrality <- betweenness( g, v = V( g), directed = TRUE)
 vectroIds <- vector( mode = "numeric", length = length( betweennessCentrality))
 vectorBetweenness <- vector( mode = "numeric", length = length( betweennessCentrality))
@@ -52,9 +44,9 @@ HBFcoverRate <- coverRateFunction( g, allShortestPaths, betweennessDf)
 
 
 
-  #
-  # calculate the cover rate function based on highest degree 
-  #
+#
+# calculate the cover rate function based on highest degree 
+#
 degreeCentrality <- degree( g, v = V( g), mode = c( "total"))
 vectroIds <- vector( mode = "numeric", length = length( degreeCentrality))
 vectorDegree <- vector( mode = "numeric", length = length( degreeCentrality))
@@ -69,18 +61,18 @@ HDFcoverRate <- coverRateFunction( g, allShortestPaths, HDegreeDf)
 
 
 
-  #
-  # calculate the cover rate function based on lowest degree betweenness 
-  #
+#
+# calculate the cover rate function based on lowest degree betweenness 
+#
 LDegreeDf <- degreeDf[ order( degreeDf[,2] ), ]
 
 LDFcoverRate <- coverRateFunction( g, allShortestPaths, LDegreeDf)
 
 
 
-  #
-  # calculate the cover rate function based on highest power community index ( PCI) 
-  #
+#
+# calculate the cover rate function based on highest power community index ( PCI) 
+#
 PCI <- calculatePCI( g)
 vectroIds <- vector( mode = "numeric", length = length( PCI))
 vectorPCI <- vector( mode = "numeric", length = length( PCI))
@@ -93,7 +85,7 @@ PCIDf <- PCIDf[ order( -PCIDf[,2] ), ]
 
 PCIcoverRate <- coverRateFunction( g, allShortestPaths, PCIDf)
 
-plot( V( g), HDFcoverRate, ylim = c( 0,1))
+plot( V( g), HDFcoverRate, type = "o", col = "yellow", ylim = c( 0,1))
 lines( V( g), PCIcoverRate, col = "red")
 lines( V( g), LDFcoverRate, col = "green")
 lines( V( g), HBFcoverRate, col = "black")
