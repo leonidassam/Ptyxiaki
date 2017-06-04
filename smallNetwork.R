@@ -1,6 +1,5 @@
 library( igraph )
 
-setwd("C:/Users/Antonios/Desktop/leonidas/Διπλωματική/Ptyxiaki-master")
 
 # read the data
 Data <- read.csv( "./Network.csv", header = FALSE )
@@ -8,6 +7,7 @@ DataEdgeList <- Data[,1:2]
 g <- graph_from_edgelist( data.matrix( DataEdgeList), directed = TRUE)
 
 
+node1 <- shortest_paths( g, 1, mode = c( "in"))
 betweennessCentrality <- betweenness( g, v = V( g), directed = TRUE)
 # List with all shortest paths from network
 allShortestPaths <- list()
@@ -24,10 +24,9 @@ for( i in V(g)) {
   }
 }
 
-nodes <- c( 3,5,2,1,4,6)
 # For each node get every shortest path. Add them to a list 
 partialShortestPaths <- list()
-for( j in 1:length( nodes)) {
+for( j in V( g)) {
   nodeOutShortestPaths <- shortest_paths( g, nodes[[j]], mode = c( "out"))
   nodeInShortestPaths <- shortest_paths( g, nodes[[j]], mode = c( "in"))
   
