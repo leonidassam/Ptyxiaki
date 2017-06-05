@@ -9,7 +9,8 @@ LDFcoverRate <- list( iter)
 PCIcoverRate <- list( iter)
 
 for( z in 1:iter) {
-  g <- sample_pa( 50)
+  print( z)
+  g <- sample_pa( 200)
   
   allShortestPaths <- list()
   allShortestPathsComplete <- list()
@@ -122,34 +123,32 @@ for( z in 1:iter) {
 }
 
 
+HDF <- list( length( V( g)))
+PCI <- list( length( V( g)))
+LDF <- list( length( V( g)))
+HBF <- list( length( V( g)))
+for( i in 1:length( V( g))) {
+  HDF[[i]] <- 0
+  PCI[[i]] <- 0
+  LDF[[i]] <- 0
+  HBF[[i]] <- 0
+}
 for( i in 1:iter) {
-  for( j in 1:length( HDFcoverRate[[1]])) {
-    HDFcoverRate[[ 1]][[j]] <- HDFcoverRate[[1]][[j]] + HDFcoverRate[[2]][[j]]
-    HDFcoverRate[[ 1]][[j]] <- HDFcoverRate[[ 1]][[j]] / 2
+  for( j in 1:length( V( g))) {
+    HDF[[ j]] <- HDF[[ j]] + HDFcoverRate[[ i]][[ j]]
+    PCI[[ j]] <- PCI[[ j]] + PCIcoverRate[[ i]][[ j]]
+    LDF[[ j]] <- LDF[[ j]] + LDFcoverRate[[ i]][[ j]]
+    HBF[[ j]] <- HBF[[ j]] + HBFcoverRate[[ i]][[ j]]
   }
+}
+for( i in 1:length( V( g))) {
+  HDF[[i]] <- HDF[[i]] /iter
+  PCI[[i]] <- PCI[[i]] /iter
+  LDF[[i]] <- LDF[[i]] /iter
+  HBF[[i]] <- HBF[[i]] /iter
 }
 
-for( i in 1:iter) {
-  for( j in 1:length( PCIcoverRate[[1]])) {
-    PCIcoverRate[[ 1]][[j]] <- PCIcoverRate[[1]][[j]] + PCIcoverRate[[2]][[j]]
-    PCIcoverRate[[ 1]][[j]] <- PCIcoverRate[[ 1]][[j]] / 2
-  }
-}
-
-for( i in 1:iter) {
-  for( j in 1:length( LDFcoverRate[[1]])) {
-    LDFcoverRate[[ 1]][[j]] <- LDFcoverRate[[1]][[j]] + LDFcoverRate[[2]][[j]]
-    LDFcoverRate[[ 1]][[j]] <- LDFcoverRate[[  1]][[j]] / 2
-  }
-}
-
-for( i in 1:iter) {
-  for( j in 1:length( HBFcoverRate[[1]])) {
-    HBFcoverRate[[ 1]][[j]] <- HBFcoverRate[[1]][[j]] + HBFcoverRate[[2]][[j]]
-    HBFcoverRate[[ 1]][[j]] <- HBFcoverRate[[  1]][[j]] / 2
-  }
-}
-plot( V( g), HDFcoverRate[[  1]], type = "o", col = "yellow", ylim = c( 0,1))
-lines( V( g), PCIcoverRate[[ 1]], col = "red")
-lines( V( g), LDFcoverRate[[  1]], col = "green")
-lines( V( g), HBFcoverRate[[  1]], col = "black")
+plot( V( g), HDF, type = "o", col = "yellow", ylim = c( 0,1))
+lines( V( g), PCI, col = "red")
+lines( V( g), LDF, col = "green")
+lines( V( g), HBF, col = "black")
