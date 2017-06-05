@@ -9,18 +9,13 @@ calculatePCI <- function( g) {
     neighbors <- neighbors( g, v, "out")
     
     Nodedegrees <- list( )
-    for( n in neighbors) {
-      Nodedegrees <-  c( Nodedegrees, degree( g, n, mode = c( "total")))
-    }
-    if( length( Nodedegrees) > 0) {
-      sort( Nodedegrees[[1]], decreasing = TRUE)
-    }
+    for( n in neighbors) {      Nodedegrees <-  c( Nodedegrees, degree( g, n, mode = c( "total")))    }
+    
+    if( length( Nodedegrees) > 0) {      sort( Nodedegrees[[1]], decreasing = TRUE)    }
     
     b <- 0
     if( length( Nodedegrees) > 0) {
-      for( i in 1:length( Nodedegrees)) { 
-        if( Nodedegrees[[i]] > b ) {    b <- b + 1      }
-      }
+      for( i in 1:length( Nodedegrees)) {         if( Nodedegrees[[i]] > b ) {    b <- b + 1      }      }
     }
     PCI <- c( PCI, b)
   }
@@ -97,23 +92,24 @@ coverRateFunction <- function( g, allShortestPaths, df) {
       }
     }
     
-    for( i in 1:length( set)) {
-      pos <- 0 
-      if( length( allShortestPathsCopy) > 0) {
-        for( ii in 1:length( allShortestPathsCopy)) {
-          if( isTRUE( all.equal( list( set[[i]]), list( allShortestPathsCopy[[ii]]))))  { 
-            pos <- ii
-            break
+    if( length( set) > 0) {
+      for( i in 1:length( set)) {
+        pos <- 0 
+        if( length( allShortestPathsCopy) > 0) {
+          for( ii in 1:length( allShortestPathsCopy)) {
+            if( isTRUE( all.equal( list( set[[i]]), list( allShortestPathsCopy[[ii]]))))  { 
+              pos <- ii
+              break
+            }
           }
-        }
-        if( pos != 0 ) {
-          partialShortestPaths[counter] <- allShortestPathsCopy[pos]
-          counter <- counter + 1
-          allShortestPathsCopy <- allShortestPathsCopy[-pos]
+          if( pos != 0 ) {
+            partialShortestPaths[counter] <- allShortestPathsCopy[pos]
+            counter <- counter + 1
+            allShortestPathsCopy <- allShortestPathsCopy[-pos]
+          }
         }
       }
     }
-    
     # cover rate function
     percentage[[vector]] <- ( counter - 1)/length( allShortestPaths)
     # print( percentage)

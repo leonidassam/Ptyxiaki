@@ -35,9 +35,49 @@ for( i in V( g)) {
 
 
 
-  #
-  # calculate the cover rate function based on highest betweenness 
-  #
+#
+# calculate the cover rate function based on highest power community index ( PCI) 
+#
+PCI <- calculatePCI( g)
+vectroIds <- vector( mode = "numeric", length = length( PCI))
+vectorPCI <- vector( mode = "numeric", length = length( PCI))
+for( i in V( g)) {
+  vectroIds[i] <- i
+  vectorPCI[i] <- PCI[[i]]
+}
+PCIDf <- data.frame( vectroIds, vectorPCI)
+PCIDf <- PCIDf[ order( -PCIDf[,2] ), ]
+
+
+for( i in 1:( nrow( PCIDf) - 1)) {
+  for( j in ( i + 1):nrow( PCIDf)) {
+    if( PCIDf[[i,2]] == PCIDf[[ j,2]]) {
+      last <- j
+    }
+  }
+  first <- i
+  
+  if( last > first) {
+    for( j in last:first) {
+      btwFirst <- betweenness( g, PCIDf[[ last - 1,1]], directed = TRUE)
+      btwLst <- betweenness( g, PCIDf[[ last,1]], directed = TRUE)
+      if( btwLst > btwFirst) {
+        temp <- PCIDf[[ last, 1]]
+        PCIDf[[ last, 1]] <- PCIDf[[ first, 1]]
+        PCIDf[[ first, 1]] <- temp
+      }
+    }
+  }
+  
+}
+PCIcoverRate <- coverRateFunction( g, allShortestPaths, PCIDf)
+
+
+
+
+      #
+      # calculate the cover rate function based on highest betweenness 
+      #
 betweennessCentrality <- betweenness( g, v = V( g), directed = TRUE)
 vectroIds <- vector( mode = "numeric", length = length( betweennessCentrality))
 vectorBetweenness <- vector( mode = "numeric", length = length( betweennessCentrality))
@@ -52,9 +92,9 @@ HBFcoverRate <- coverRateFunction( g, allShortestPaths, betweennessDf)
 
 
 
-  #
-  # calculate the cover rate function based on highest degree 
-  #
+      #
+      # calculate the cover rate function based on highest degree 
+      #
 degreeCentrality <- degree( g, v = V( g), mode = c( "total"))
 vectroIds <- vector( mode = "numeric", length = length( degreeCentrality))
 vectorDegree <- vector( mode = "numeric", length = length( degreeCentrality))
@@ -69,29 +109,16 @@ HDFcoverRate <- coverRateFunction( g, allShortestPaths, HDegreeDf)
 
 
 
-  #
-  # calculate the cover rate function based on lowest degree betweenness 
-  #
+      #
+      # calculate the cover rate function based on lowest degree betweenness 
+      #
 LDegreeDf <- degreeDf[ order( degreeDf[,2] ), ]
 
 LDFcoverRate <- coverRateFunction( g, allShortestPaths, LDegreeDf)
 
 
 
-  #
-  # calculate the cover rate function based on highest power community index ( PCI) 
-  #
-PCI <- calculatePCI( g)
-vectroIds <- vector( mode = "numeric", length = length( PCI))
-vectorPCI <- vector( mode = "numeric", length = length( PCI))
-for( i in V( g)) {
-  vectroIds[i] <- i
-  vectorPCI[i] <- PCI[[i]]
-}
-PCIDf <- data.frame( vectroIds, vectorPCI)
-PCIDf <- PCIDf[ order( -PCIDf[,2] ), ]
 
-PCIcoverRate <- coverRateFunction( g, allShortestPaths, PCIDf)
 
 plot( V( g), HDFcoverRate, ylim = c( 0,1))
 lines( V( g), PCIcoverRate, col = "red")
