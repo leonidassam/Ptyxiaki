@@ -9,8 +9,8 @@ LDFcoverRate <- list( iter)
 PCIcoverRate <- list( iter)
 
 for( z in 1:iter) {
-  print( z)
-  g <- sample_pa( 200)
+  
+  g <- erdos.renyi.game( 50, 0.03, type = c( "gnp"), directed = FALSE, loops = FALSE)
   
   allShortestPaths <- list()
   allShortestPathsComplete <- list()
@@ -35,11 +35,12 @@ for( z in 1:iter) {
       }
     }
   }
+  print( z)
   
   
-  #
-  # calculate the cover rate function based on highest betweenness 
-  #
+        #
+        # calculate the cover rate function based on highest betweenness 
+        #
   betweennessCentrality <- betweenness( g, v = V( g), directed = TRUE)
   vectroIds <- vector( mode = "numeric", length = length( betweennessCentrality))
   vectorBetweenness <- vector( mode = "numeric", length = length( betweennessCentrality))
@@ -51,54 +52,53 @@ for( z in 1:iter) {
   betweennessDf <- betweennessDf[ order( -betweennessDf[,2] ), ]
   
   HBFcoverRate[[z]] <- coverRateFunction( g, allShortestPaths, betweennessDf)
+  print( "betweenness ")
   
   
-  
-  #
-  # calculate the cover rate function based on highest degree 
-  #
+        #
+        # calculate the cover rate function based on highest degree 
+        #
   degreeCentrality <- degree( g, v = V( g), mode = c( "total"))
-  vectroIds <- vector( mode = "numeric", length = length( degreeCentrality))
   vectorDegree <- vector( mode = "numeric", length = length( degreeCentrality))
   for( i in V( g)) {
-    vectroIds[i] <- i
     vectorDegree[i] <- degreeCentrality[[i]]
   }
   degreeDf <- data.frame( vectroIds, vectorDegree)
   HDegreeDf <- degreeDf[ order( -degreeDf[,2] ), ]
   
   HDFcoverRate[[z]] <- coverRateFunction( g, allShortestPaths, HDegreeDf)
+  print( "high degree")
+
   
-  
-  
-  #
-  # calculate the cover rate function based on lowest degree betweenness 
-  #
+        #
+        # calculate the cover rate function based on lowest degree betweenness 
+        #
   LDegreeDf <- degreeDf[ order( degreeDf[,2] ), ]
   
   LDFcoverRate[[z]] <- coverRateFunction( g, allShortestPaths, LDegreeDf)
+
   
   
   
-  #
-  # calculate the cover rate function based on highest power community index ( PCI) 
-  #
+        #
+        # calculate the cover rate function based on highest power community index ( PCI) 
+        #
   PCI <- calculatePCI( g)
-  vectroIds <- vector( mode = "numeric", length = length( PCI))
   vectorPCI <- vector( mode = "numeric", length = length( PCI))
   for( i in V( g)) {
-    vectroIds[i] <- i
     vectorPCI[i] <- PCI[[i]]
   }
   PCIDf <- data.frame( vectroIds, vectorPCI)
   PCIDf <- PCIDf[ order( -PCIDf[,2] ), ]
-  
+  print( "PCI")
   
 
+  last <- 0
   for( i in 1:( nrow( PCIDf) - 1)) {
     for( j in ( i + 1):nrow( PCIDf)) {
-      if( PCIDf[[i,2]] == PCIDf[[ j,2]]) {
-        last <- j
+      if( PCIDf[[i,2]] != PCIDf[[ j,2]]) {
+        last <- j - 1
+        break
       }
     }
     first <- i
@@ -116,39 +116,44 @@ for( z in 1:iter) {
     }
     
   }
-  
+
 
   
   PCIcoverRate[[z]] <- coverRateFunction( g, allShortestPaths, PCIDf)
 }
 
-
-HDF <- list( length( V( g)))
-PCI <- list( length( V( g)))
-LDF <- list( length( V( g)))
 HBF <- list( length( V( g)))
+HDF <- list( length( V( g)))
+LDF <- list( length( V( g)))
+PCI <- list( length( V( g)))
+
 for( i in 1:length( V( g))) {
-  HDF[[i]] <- 0
-  PCI[[i]] <- 0
-  LDF[[i]] <- 0
   HBF[[i]] <- 0
+  HDF[[i]] <- 0
+  LDF[[i]] <- 0
+  PCI[[i]] <- 0
 }
 for( i in 1:iter) {
   for( j in 1:length( V( g))) {
-    HDF[[ j]] <- HDF[[ j]] + HDFcoverRate[[ i]][[ j]]
-    PCI[[ j]] <- PCI[[ j]] + PCIcoverRate[[ i]][[ j]]
-    LDF[[ j]] <- LDF[[ j]] + LDFcoverRate[[ i]][[ j]]
     HBF[[ j]] <- HBF[[ j]] + HBFcoverRate[[ i]][[ j]]
+    HDF[[ j]] <- HDF[[ j]] + HDFcoverRate[[ i]][[ j]]
+    LDF[[ j]] <- LDF[[ j]] + LDFcoverRate[[ i]][[ j]]
+    PCI[[ j]] <- PCI[[ j]] + PCIcoverRate[[ i]][[ j]]
   }
 }
 for( i in 1:length( V( g))) {
-  HDF[[i]] <- HDF[[i]] /iter
-  PCI[[i]] <- PCI[[i]] /iter
-  LDF[[i]] <- LDF[[i]] /iter
   HBF[[i]] <- HBF[[i]] /iter
+  HDF[[i]] <- HDF[[i]] /iter
+  LDF[[i]] <- LDF[[i]] /iter
+  PCI[[i]] <- PCI[[i]] /iter
 }
 
-plot( V( g), HDF, type = "o", col = "yellow", ylim = c( 0,1))
-lines( V( g), PCI, col = "red")
+pdf( "Random 100nodes p0.0015 undirected improved")
+plot( g, vertex.size = 0)
+plot( V( g), main = "Cover Rate Function",  xlab = "Vertices", ylab = "Percentage",   ylim = c( 0:1))
+lines( V( g), HBF, col = "blue")
+lines( V( g), HDF, col = "red")
 lines( V( g), LDF, col = "green")
-lines( V( g), HBF, col = "black")
+lines( V( g), PCI, col = "black")
+legend( "bottomright", c( "HBF", "HDF", "LDF", "PCI"), lty = c( 1, 1), lwd = c( 2, 2),col = c( "blue", "red", "green", "black"))
+dev.off()
