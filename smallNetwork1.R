@@ -38,7 +38,7 @@ for( i in V( g)) {
 #
 # calculate the cover rate function based on highest power community index ( PCI) 
 #
-PCI <- calculatePCI( g)
+PCI <- calculatePCI( g, "in")
 vectroIds <- vector( mode = "numeric", length = length( PCI))
 vectorPCI <- vector( mode = "numeric", length = length( PCI))
 for( i in V( g)) {
@@ -48,7 +48,7 @@ for( i in V( g)) {
 PCIDf <- data.frame( vectroIds, vectorPCI)
 PCIDf <- PCIDf[ order( -PCIDf[,2] ), ]
 
-
+if( FALSE) {
 for( i in 1:( nrow( PCIDf) - 1)) {
   for( j in ( i + 1):nrow( PCIDf)) {
     if( PCIDf[[i,2]] == PCIDf[[ j,2]]) {
@@ -68,7 +68,7 @@ for( i in 1:( nrow( PCIDf) - 1)) {
       }
     }
   }
-  
+}
 }
 PCIcoverRate <- coverRateFunction( g, allShortestPaths, PCIDf)
 
