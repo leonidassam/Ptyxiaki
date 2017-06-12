@@ -3,7 +3,7 @@ source( "Functions.R")
 
 
 
-g <- sample_pa( 30, m = 8, directed = TRUE)
+g <- sample_pa( 10, m = 2, directed = TRUE)
   
 
 HBF <- list( length( V( g)))

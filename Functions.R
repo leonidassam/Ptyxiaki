@@ -54,44 +54,19 @@ coverRateFunction <- function( g, allShortestPaths, df) {
     nodeInShortestPaths <- shortest_paths( g, df[[vector,1]], mode = c( "in"))
     
     set <- list()
-    for( i in 1:length( nodeOutShortestPaths[[1]])) {
-      path <- list( unlist( nodeOutShortestPaths[[1]][[i]]))
-      listToAdd <- list()
-      if( length( path[[1]]) > 1) {
-        listToAdd <- c( listToAdd, df[[vector,1]])
-        listToAdd <- c( listToAdd, path[[1]][[length( path[[1]])]])
-        set <- c( set, list( listToAdd))
-      }
-    }
-    
-    for( i in 1:length( nodeInShortestPaths[[1]])) {
-      path <- list( unlist( nodeInShortestPaths[[1]][[i]]))
-      listToAdd <- list()
-      if( length( path[[1]]) > 1) {
-        listToAdd <- c( listToAdd, path[[1]][[length( path[[1]])]])
-        listToAdd <- c( listToAdd, df[[vector,1]])
-        set <- c( set, list( listToAdd))
-      }
-    }
-    
-    if( length( allShortestPathsCopy) > 0) {
+
+    if( length( allShortestPathsCompleteCopy) > 0) {
       for( i in 1:length( allShortestPathsCompleteCopy)) {
         path <- list( unlist( allShortestPathsCompleteCopy[[i]]))
         listToAdd <- list()
         if( df[[vector,1]] %in% allShortestPathsCompleteCopy[[i]]) {
           listToAdd <- c( listToAdd, path[[1]][[1]])
           listToAdd <- c( listToAdd, path[[1]][[length( path[[1]])]])
-          for( jj in 1:length( set)) {
-            exists <- 0
-            if( isTRUE( all.equal( list( set[[jj]]), list( listToAdd)))) {
-              exists <- 1
-              break
-            }
-          }
-          if( exists == 0) { set <- c( set, list( listToAdd))}
+          set <- c( set, list( listToAdd))
         }
       }
     }
+    
     
     if( length( set) > 0) {
       for( i in 1:length( set)) {
@@ -228,8 +203,8 @@ getMeanValues <- function( HBFcoverRate, HDFcoverRate, HCFcoverRate, HPCIDf) {
 
 
 # plots the results of the cover rate functions
-plotTheResults <- function( g, HBF, HDF, HCF, PCI) {
-  png( filename = "C:/Users/Antonios/Desktop/leonidas/Διπλωματική/Ptyxiaki-master/50n0des50edges4.png")
+plotCoverRateFunction <- function( g, HBF, HDF, HCF, PCI, fname) {
+  png( filename = fname)
   plot( V( g), main = "Cover Rate Function",  xlab = "Vertices", ylab = "Percentage",   ylim = c( 0:1))
   lines( V( g), HBF, col = "blue")
   lines( V( g), HDF, col = "red")
@@ -237,8 +212,18 @@ plotTheResults <- function( g, HBF, HDF, HCF, PCI) {
   lines( V( g), PCI, col = "black")
   legend( "bottomright", c( "HBF", "HDF", "HCF", "PCI"), lty = c( 1, 1), lwd = c( 2, 2),col = c( "blue", "red", "green", "black"))
   dev.off()
-  
-  png( filename = "C:/Users/Antonios/Desktop/leonidas/Διπλωματική/Ptyxiaki-master/graph.png")
-  plot( g, edge.arrow.size = 0.25)
+}
+
+
+# plots the number of check ing nodes for every centrality
+plotNumberOfCheckInNodes <- function ( g, numberOfNodes, CheckInNodesHBF, CheckInNodesHDF, CheckInNodesHCF, CheckInNodesPCI, fname){
+                            
+  png( filename = fname)
+  plot( 0, main = "Number of check in nodes",  xlab = "Vertices", xlim = c( 0,length( V( g))), ylim = c( 0,length( V( g))))
+  lines( numberOfNodes, CheckInNodesHBF, col = "blue")
+  lines( numberOfNodes, CheckInNodesHDF, col = "red")
+  lines( numberOfNodes, CheckInNodesHCF, col = "green")
+  lines( numberOfNodes, CheckInNodesPCI, col = "black")
+  legend( "bottomright", c( "HBF", "HDF", "HCF", "PCI"), lty = c( 1, 1), lwd = c( 2, 2),col = c( "blue", "red", "green", "black"))
   dev.off()
 }
