@@ -6,7 +6,7 @@ calculatePCI <- function( g, m) {
   PCI = list( )
   
   for( v in V( g)) {
-    neighbors <- neighbors( g, v, "out")
+    neighbors <- neighbors( g, v, "in")
     
     Nodedegrees <- list( )
     for( n in neighbors) {      Nodedegrees <-  c( Nodedegrees, degree( g, n, mode = m))    }
@@ -154,7 +154,7 @@ createSortedHCFDataframe <- function( g) {
 # returns a dataframe
 createSortedHPCIDataframe <- function( g) {
   
-  PCI <- calculatePCI( g, "in")
+  PCI <- calculatePCI( g, "all")
   vectroIds <- vector( mode = "numeric", length = length( PCI))
   vectorPCI <- vector( mode = "numeric", length = length( PCI))
   for( i in V( g)) {
@@ -170,7 +170,7 @@ createSortedHPCIDataframe <- function( g) {
 
 # get the mean results
 # return a list of lists HBF - HDF - HCF - PCI
-getMeanValues <- function( HBFcoverRate, HDFcoverRate, HCFcoverRate, HPCIDf) {
+getMeanValues <- function( g, HBFcoverRate, HDFcoverRate, HCFcoverRate, PCIcoverRate) {
   
   HBF <- list( length( V( g)))
   HDF <- list( length( V( g)))
@@ -225,5 +225,33 @@ plotNumberOfCheckInNodes <- function ( g, numberOfNodes, CheckInNodesHBF, CheckI
   lines( numberOfNodes, CheckInNodesHCF, col = "green")
   lines( numberOfNodes, CheckInNodesPCI, col = "black")
   legend( "bottomright", c( "HBF", "HDF", "HCF", "PCI"), lty = c( 1, 1), lwd = c( 2, 2),col = c( "blue", "red", "green", "black"))
+  dev.off()
+}
+
+
+# extract the results to file
+resultsToFile <- function( numberOfNodes, CheckInNodesHBF, CheckInNodesHDF, CheckInNodesHCF, CheckInNodesPCI, fname) {
+  
+  lapply( "number Of nodes ", write, toString( fname), append = FALSE)
+  lapply( numberOfNodes, write, toString( fname), append = TRUE)
+  lapply( "numberOfCheckInNodesHBF", write, toString( fname), append = TRUE)
+  lapply( CheckInNodesHBF, write, toString( fname), append = TRUE)
+  lapply( "numberOfCheckInNodesHDF", write, toString( fname), append = TRUE)
+  lapply( CheckInNodesHDF, write, toString( fname), append = TRUE)
+  lapply( "numberOfCheckInNodesHCF", write, toString( fname), append = TRUE)
+  lapply( CheckInNodesHCF, write, toString( fname), append = TRUE)
+  lapply( "numberOfCheckInNodesPCI", write, toString( fname), append = TRUE)
+  lapply( CheckInNodesPCI, write, toString( fname), append = TRUE)
+}
+
+
+# plot the cover rate function for each centrality
+plotTheCoverRateForEachCentrality <- function( g, centrality, BA, RA, fname) {
+  
+  png( filename = fname)
+  plot( V( g), main = "Cover rate Function for",  xlab = "Vertices", ylab = "Percentage",   ylim = c( 0:1))
+  lines( V( g), BA, col = "blue")
+  lines( V( g), RA, col = "red")
+  legend( "bottomright", c( "BA", "RA"), lty = c( 1, 1), lwd = c( 2, 2),col = c( "blue", "red"))
   dev.off()
 }
