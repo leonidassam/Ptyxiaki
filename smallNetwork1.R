@@ -9,71 +9,28 @@ g <- graph_from_edgelist( data.matrix( DataEdgeList), directed = TRUE)
 
 
 # Lists with all shortest paths from network
-allShortestPaths <- list()
-allShortestPathsComplete <- list()
+allShortestPathsComplete <- vector( "list",  100)
+counter <- 1
 for( i in V( g)) {
   for( j in V( g)) {
     # do not compute loops 
     if( i != j ) {
       shortestPaths <- shortest_paths( g, i, j, mode = c("out"))
       for( x in 1:length( shortestPaths[[1]])) {
-        listToAdd <- list()
         if( length( shortestPaths[[1]][[x]]) > 0 ) {
-          listToAdd <- c( listToAdd, i)
-          listToAdd <- c( listToAdd, j)
-          allShortestPaths <- c( allShortestPaths, list( listToAdd))
           alist <- list()
           for( ii in 1:length( shortestPaths[[1]][[x]])) {
             alist <- c( alist, shortestPaths[[1]][[x]][[ii]])
           }
-          allShortestPathsComplete <- c( allShortestPathsComplete, list( alist))
+          allShortestPathsComplete[counter] <- list( alist)
+          counter <- counter + 1
         }
       }
     }
   }
 }
 
-
-
-#
-# calculate the cover rate function based on highest power community index ( PCI) 
-#
-PCI <- calculatePCI( g, "in")
-vectroIds <- vector( mode = "numeric", length = length( PCI))
-vectorPCI <- vector( mode = "numeric", length = length( PCI))
-for( i in V( g)) {
-  vectroIds[i] <- i
-  vectorPCI[i] <- PCI[[i]]
-}
-PCIDf <- data.frame( vectroIds, vectorPCI)
-PCIDf <- PCIDf[ order( -PCIDf[,2] ), ]
-
-if( FALSE) {
-for( i in 1:( nrow( PCIDf) - 1)) {
-  for( j in ( i + 1):nrow( PCIDf)) {
-    if( PCIDf[[i,2]] == PCIDf[[ j,2]]) {
-      last <- j
-    }
-  }
-  first <- i
-  
-  if( last > first) {
-    for( j in last:first) {
-      btwFirst <- betweenness( g, PCIDf[[ last - 1,1]], directed = TRUE)
-      btwLst <- betweenness( g, PCIDf[[ last,1]], directed = TRUE)
-      if( btwLst > btwFirst) {
-        temp <- PCIDf[[ last, 1]]
-        PCIDf[[ last, 1]] <- PCIDf[[ first, 1]]
-        PCIDf[[ first, 1]] <- temp
-      }
-    }
-  }
-}
-}
-PCIcoverRate <- coverRateFunction( g, allShortestPaths, PCIDf)
-
-
-
+allShortestPathsComplete <- allShortestPathsComplete[ !sapply( allShortestPathsComplete, is.null)] 
 
       #
       # calculate the cover rate function based on highest betweenness 
@@ -88,39 +45,37 @@ for( i in V( g)) {
 betweennessDf <- data.frame( vectroIds, vectorBetweenness)
 betweennessDf <- betweennessDf[ order( -betweennessDf[,2] ), ]
 
-HBFcoverRate <- coverRateFunction( g, allShortestPaths, betweennessDf)
 
 
+allShortestPathsCompleteCopy <- allShortestPathsComplete
+partialShortestPaths <- vector( "list", length( allShortestPathsComplete))
+percentage <- vector( "list", length( V( g)))
+counter <- 1
 
-      #
-      # calculate the cover rate function based on highest degree 
-      #
-degreeCentrality <- degree( g, v = V( g), mode = c( "total"))
-vectroIds <- vector( mode = "numeric", length = length( degreeCentrality))
-vectorDegree <- vector( mode = "numeric", length = length( degreeCentrality))
-for( i in V( g)) {
-  vectroIds[i] <- i
-  vectorDegree[i] <- degreeCentrality[[i]]
+for( vector in V( g)) {
+  
+  set <- list()
+  
+  if( length( allShortestPathsCompleteCopy) > 0) {
+    for( i in 1:length( allShortestPathsCompleteCopy)) {
+        if( betweennessDf[[ vector,1]] %in% allShortestPathsCompleteCopy[[i]]) {
+          set <- c( set, i)
+        }
+     }
+  }
+  
+  
+  if( length( set) > 0) {
+    for( i in 1:length( set)) {
+      partialShortestPaths[[counter]] <- allShortestPathsComplete[[set[[i]]]]
+      allShortestPathsCompleteCopy <- allShortestPathsCompleteCopy[ -set[[ length( set) - i + 1]]]
+      counter <- counter + 1 
+    }
+  }
+  
+  # cover rate function
+  percentage[[vector]] <- ( counter - 1)/length( allShortestPathsComplete)
+  
 }
-degreeDf <- data.frame( vectroIds, vectorDegree)
-HDegreeDf <- degreeDf[ order( -degreeDf[,2] ), ]
-
-HDFcoverRate <- coverRateFunction( g, allShortestPaths, HDegreeDf)
-
-
-
-      #
-      # calculate the cover rate function based on lowest degree betweenness 
-      #
-LDegreeDf <- degreeDf[ order( degreeDf[,2] ), ]
-
-LDFcoverRate <- coverRateFunction( g, allShortestPaths, LDegreeDf)
-
-
-
-
-
-plot( V( g), HDFcoverRate, ylim = c( 0,1))
-lines( V( g), PCIcoverRate, col = "red")
-lines( V( g), LDFcoverRate, col = "green")
-lines( V( g), HBFcoverRate, col = "black")
+  
+HBFcoverRate <- percentage

@@ -1,8 +1,9 @@
 library( igraph)
+library("compiler")
 source( "Functions.R")
 
 # network size
-numberOfNodes <- c( 10, 15)
+numberOfNodes <- c( 20, 40, 80, 160)
 # number of simulations for networks of size N
 iter <- 3
 
@@ -40,64 +41,61 @@ counter <- 1
 for( n in numberOfNodes) {
 
   print( n)
-  
-  
-  
                                       # 
                                       #  BA NETWORKS
                                       #
   
   for( z in 1:iter) {
     
-    BAgraph <- sample_pa( n, m = n/10, directed = TRUE)
+    BAgraph <- sample_pa( n, m = n/4, directed = TRUE)
     
-    allShortestPaths <- list()
-    allShortestPathsComplete <- list()
+    allShortestPathsComplete <- vector( "list",  2*n^2)
+    k <- 1
     for( i in V( BAgraph)) {
       for( j in V( BAgraph)) {
         # do not compute loops 
         if( i != j ) {
           shortestPaths <- shortest_paths( BAgraph, i, j, mode = c("out"))
           for( x in 1:length( shortestPaths[[1]])) {
-            listToAdd <- list()
             if( length( shortestPaths[[1]][[x]]) > 0 ) {
-              listToAdd <- c( listToAdd, i)
-              listToAdd <- c( listToAdd, j)
-              allShortestPaths <- c( allShortestPaths, list( listToAdd))
               alist <- list()
               for( ii in 1:length( shortestPaths[[1]][[x]])) {
                 alist <- c( alist, shortestPaths[[1]][[x]][[ii]])
               }
-              allShortestPathsComplete <- c( allShortestPathsComplete, list( alist))
+              allShortestPathsComplete[k] <- list( alist)
+              k <- k + 1
             }
           }
         }
       }
     }
+    allShortestPathsComplete <- allShortestPathsComplete[ !sapply( allShortestPathsComplete, is.null)] 
+    
     
           # calculate the cover rate function based on highest betweenness 
     HBetweennessDf <- createSortedHBFDataframe( BAgraph )
-    BAHBFcoverRate[[z]] <- coverRateFunction( BAgraph, allShortestPaths, HBetweennessDf)
+    BAHBFcoverRate[[z]] <- compiledCoverRateFunction( BAgraph, allShortestPathsComplete, HBetweennessDf)
     
     
           # calculate the cover rate function based on highest degree 
     HDegreeDf <- createSortedHDFDataframe( BAgraph)
-    BAHDFcoverRate[[z]] <- coverRateFunction( BAgraph, allShortestPaths, HDegreeDf)
+    BAHDFcoverRate[[z]] <- compiledCoverRateFunction( BAgraph, allShortestPathsComplete, HDegreeDf)
   
     
           # calculate the cover rate function based on highest closeness 
     HClosenessDf <- createSortedHCFDataframe( BAgraph)
-    BAHCFcoverRate[[z]] <- coverRateFunction( BAgraph, allShortestPaths, HClosenessDf)
+    BAHCFcoverRate[[z]] <- compiledCoverRateFunction( BAgraph, allShortestPathsComplete, HClosenessDf)
     
   
           # calculate the cover rate function based on highest power community index ( PCI) 
     HPCIDf <- createSortedHPCIDataframe( BAgraph)
-    BAPCIcoverRate[[z]] <- coverRateFunction( BAgraph, allShortestPaths, HPCIDf)
+    BAPCIcoverRate[[z]] <- compiledCoverRateFunction( BAgraph, allShortestPathsComplete, HPCIDf)
   }
   
-  # get the mean values of the simulations
-  # HBF - HDF - HCF - PCI the order of the results
+    # get the mean values of the simulations
+    # HBF - HDF - HCF - PCI the order of the results
   results <- getMeanValues( BAgraph, BAHBFcoverRate, BAHDFcoverRate, BAHCFcoverRate, BAPCIcoverRate)
+  
   
   BAHBF <- results[[1]]
   BAHDF <- results[[2]]
@@ -105,6 +103,7 @@ for( n in numberOfNodes) {
   BAPCI <- results[[4]]
   
   
+    # count the number of check in nodes
   for( i in 1:length( results[[1]])) {
     if( results[[1]][[i]] == 1) {
       BAnumberOfCheckInNodesHBF <- c( BAnumberOfCheckInNodesHBF, i)
@@ -130,14 +129,14 @@ for( n in numberOfNodes) {
     }
   }
   
-  # plot the cover rate function
-  # result[[1]] = HBF, result[[2]] = HDF, result[[3]] = HCF, result[[4]] = PCI
+    # plot the cover rate function
+    # result[[1]] = HBF, result[[2]] = HDF, result[[3]] = HCF, result[[4]] = PCI
   image <- c( "Cover Rate Function", "BA network", "directed", n, "nodes", ".png")
   plotCoverRateFunction( BAgraph, BAHBF, BAHDF, BAHCF, BAPCI, toString( image))
 
   
   
-  
+  print( "RA")
   
                                 # 
                                 #  RA NETWORKS
@@ -147,52 +146,53 @@ for( n in numberOfNodes) {
     
     RAgraph <- erdos.renyi.game( n, length( E( BAgraph)), type = c( "gnm"), directed = TRUE)
     
-    allShortestPaths <- list()
-    allShortestPathsComplete <- list()
+
+    allShortestPathsComplete <- vector( "list",  2*n^2)
+    k <- 1
     for( i in V( RAgraph)) {
       for( j in V( RAgraph)) {
         # do not compute loops 
         if( i != j ) {
           shortestPaths <- shortest_paths( RAgraph, i, j, mode = c("out"))
           for( x in 1:length( shortestPaths[[1]])) {
-            listToAdd <- list()
             if( length( shortestPaths[[1]][[x]]) > 0 ) {
-              listToAdd <- c( listToAdd, i)
-              listToAdd <- c( listToAdd, j)
-              allShortestPaths <- c( allShortestPaths, list( listToAdd))
               alist <- list()
               for( ii in 1:length( shortestPaths[[1]][[x]])) {
                 alist <- c( alist, shortestPaths[[1]][[x]][[ii]])
               }
-              allShortestPathsComplete <- c( allShortestPathsComplete, list( alist))
+              allShortestPathsComplete[k] <- list( alist)
+              k <- k + 1
             }
           }
         }
       }
     }
+    allShortestPathsComplete <- allShortestPathsComplete[ !sapply( allShortestPathsComplete, is.null)] 
+    print( length( allShortestPathsComplete))
+    
     
     # calculate the cover rate function based on highest betweenness 
     HBetweennessDf <- createSortedHBFDataframe( RAgraph )
-    RAHBFcoverRate[[z]] <- coverRateFunction( RAgraph, allShortestPaths, HBetweennessDf)
+    RAHBFcoverRate[[z]] <- compiledCoverRateFunction( RAgraph, allShortestPathsComplete, HBetweennessDf)
     
     
     # calculate the cover rate function based on highest degree 
     HDegreeDf <- createSortedHDFDataframe( RAgraph)
-    RAHDFcoverRate[[z]] <- coverRateFunction( RAgraph, allShortestPaths, HDegreeDf)
+    RAHDFcoverRate[[z]] <- compiledCoverRateFunction( RAgraph, allShortestPathsComplete, HDegreeDf)
     
     
     # calculate the cover rate function based on highest closeness 
     HClosenessDf <- createSortedHCFDataframe( RAgraph)
-    RAHCFcoverRate[[z]] <- coverRateFunction( RAgraph, allShortestPaths, HClosenessDf)
+    RAHCFcoverRate[[z]] <- compiledCoverRateFunction( RAgraph, allShortestPathsComplete, HClosenessDf)
     
     
     # calculate the cover rate function based on highest power community index ( PCI) 
     HPCIDf <- createSortedHPCIDataframe( RAgraph)
-    RAPCIcoverRate[[z]] <- coverRateFunction( RAgraph, allShortestPaths, HPCIDf)
+    RAPCIcoverRate[[z]] <- compiledCoverRateFunction( RAgraph, allShortestPathsComplete, HPCIDf)
   }
   
-  # get the mean values of the simulations
-  # HBF - HDF - HCF - PCI the order of the results
+    # get the mean values of the simulations
+    # HBF - HDF - HCF - PCI the order of the results
   results <- getMeanValues( RAgraph, RAHBFcoverRate, RAHDFcoverRate, RAHCFcoverRate, RAPCIcoverRate)
   
   RAHBF <- results[[1]]
@@ -200,6 +200,8 @@ for( n in numberOfNodes) {
   RAHCF <- results[[3]]
   RAPCI <- results[[4]]
   
+  
+  # counte the number of check in nodes
   for( i in 1:length( results[[1]])) {
     if( results[[1]][[i]] == 1) {
       RAnumberOfCheckInNodesHBF <- c( RAnumberOfCheckInNodesHBF, i)
@@ -225,45 +227,45 @@ for( n in numberOfNodes) {
     }
   }
   
-  # plot the cover rate function
-  # result[[1]] = HBF, result[[2]] = HDF, result[[3]] = HCF, result[[4]] = PCI
+  
+
+    # plot the cover rate function
+    # result[[1]] = HBF, result[[2]] = HDF, result[[3]] = HCF, result[[4]] = PCI
   image <- c( "Cover Rate Function", "RA network", "directed", n, "nodes", ".png")
   plotCoverRateFunction( RAgraph, RAHBF, RAHDF, RAHCF, RAPCI, toString( image))
 
-  
-  image <- c( "Cover rate functions for HBF", n, "nodes", ".png")
-  plotTheCoverRateForEachCentrality( RAgraph, "HBF", BAHBF, RAHBF, toString( image)) 
-  
+
+    #
+    # plot the cover rate functions for BA and RA networks for each centrality
+  image <- c( "Cover rate functions for HBF", "directed", n, "nodes", ".png")
+  title <- c( "Cover rate function for HBF")
+  plotTheCoverRateForEachCentrality( RAgraph, "HBF", BAHBF, RAHBF, title, toString( image)) 
   image <- c( "Cover rate functions for HDF", n, "nodes", ".png")
-  plotTheCoverRateForEachCentrality( RAgraph, "HDF", BAHDF, RAHDF, toString( image)) 
-  
+  title <- c( "Cover rate function for HDF")
+  plotTheCoverRateForEachCentrality( RAgraph, "HDF", BAHDF, RAHDF, title, toString( image)) 
   image <- c( "Cover rate functions for HCF", n, "nodes", ".png")
-  plotTheCoverRateForEachCentrality( RAgraph, "HCF", BAHCF, RAHCF, toString( image)) 
-  
+  title <- c( "Cover rate function for HCF")
+  plotTheCoverRateForEachCentrality( RAgraph, "HCF", BAHCF, RAHCF, title, toString( image)) 
   image <- c( "Cover rate functions for PCI", n, "nodes", ".png")
-  plotTheCoverRateForEachCentrality( RAgraph, "PCI", BAPCI, RAPCI, toString( image)) 
+  title <- c( "Cover rate function for PCI")
+  plotTheCoverRateForEachCentrality( RAgraph, "PCI", BAPCI, RAPCI, title, toString( image)) 
 
   
 }
 
 
-# results to file
-outputFile <- c( "BA Number Of CheckIn Nodes", ".txt")
+
+    # results to file
+outputFile <- c( "BA Number Of CheckIn Nodes", "directed", ".txt")
 resultsToFile( numberOfNodes, BAnumberOfCheckInNodesHBF, BAnumberOfCheckInNodesHDF, BAnumberOfCheckInNodesHCF, BAnumberOfCheckInNodesPCI, toString( outputFile))
-
-
-# plot the number of chceck in nodes
-fname <- c( "Number of check in nodes", "BA network", "undirected", n, "nodes", ".png")
-plotNumberOfCheckInNodes( BAgraph, numberOfNodes, BAnumberOfCheckInNodesHBF, BAnumberOfCheckInNodesHDF, BAnumberOfCheckInNodesHCF, BAnumberOfCheckInNodesPCI, toString( fname))
-
-
-
-
-# results to file
-outputFile <- c( "RA Number Of CheckIn Nodes", ".txt")
+    # results to file
+outputFile <- c( "RA Number Of CheckIn Nodes", "directed", ".txt")
 resultsToFile( numberOfNodes, RAnumberOfCheckInNodesHBF, RAnumberOfCheckInNodesHDF, RAnumberOfCheckInNodesHCF, RAnumberOfCheckInNodesPCI, toString( outputFile))
 
 
-# plot the number of chceck in nodes
-fname <- c( "Number of check in nodes", "RA network", "undirected", n, "nodes", ".png")
+    # plot the number of chceck in nodes
+fname <- c( "Number of check in nodes", "BA network", "directed", n, "nodes", ".png")
+plotNumberOfCheckInNodes( BAgraph, numberOfNodes, BAnumberOfCheckInNodesHBF, BAnumberOfCheckInNodesHDF, BAnumberOfCheckInNodesHCF, BAnumberOfCheckInNodesPCI, toString( fname))
+    # plot the number of chceck in nodes
+fname <- c( "Number of check in nodes", "RA network", "directed", n, "nodes", ".png")
 plotNumberOfCheckInNodes( RAgraph, numberOfNodes, RAnumberOfCheckInNodesHBF, RAnumberOfCheckInNodesHDF, RAnumberOfCheckInNodesHCF, RAnumberOfCheckInNodesPCI, toString( fname))

@@ -1,4 +1,7 @@
 library( igraph )
+library("compiler")
+enableJIT( 3)
+
 
 # calculates the PCI of the network 
 # returns a list 
@@ -42,27 +45,21 @@ findPositions <- function( data) {
 
 # calculates the cover rate function based on HBF
 # returns a list 
-coverRateFunction <- function( g, allShortestPaths, df) {
+coverRateFunction <- function( g, allShortestPathsComplete, df) {
   
-  allShortestPathsCopy <- allShortestPaths
+
   allShortestPathsCompleteCopy <- allShortestPathsComplete
-  partialShortestPaths <- list( length( allShortestPaths))
-  percentage <- list( length( V( g)))
+  partialShortestPaths <- vector( "list", length( allShortestPathsComplete))
+  percentage <- vector( "list", length( V( g)))
   counter <- 1
   for( vector in V( g)) {
-    nodeOutShortestPaths <- shortest_paths( g, df[[vector,1]], mode = c( "out"))
-    nodeInShortestPaths <- shortest_paths( g, df[[vector,1]], mode = c( "in"))
     
     set <- list()
 
     if( length( allShortestPathsCompleteCopy) > 0) {
       for( i in 1:length( allShortestPathsCompleteCopy)) {
-        path <- list( unlist( allShortestPathsCompleteCopy[[i]]))
-        listToAdd <- list()
         if( df[[vector,1]] %in% allShortestPathsCompleteCopy[[i]]) {
-          listToAdd <- c( listToAdd, path[[1]][[1]])
-          listToAdd <- c( listToAdd, path[[1]][[length( path[[1]])]])
-          set <- c( set, list( listToAdd))
+          set <- c( set, i)
         }
       }
     }
@@ -70,31 +67,19 @@ coverRateFunction <- function( g, allShortestPaths, df) {
     
     if( length( set) > 0) {
       for( i in 1:length( set)) {
-        pos <- 0 
-        if( length( allShortestPathsCopy) > 0) {
-          for( ii in 1:length( allShortestPathsCopy)) {
-            if( isTRUE( all.equal( list( set[[i]]), list( allShortestPathsCopy[[ii]]))))  { 
-              pos <- ii
-              break
-            }
-          }
-          if( pos != 0 ) {
-            partialShortestPaths[counter] <- allShortestPathsCopy[pos]
-            counter <- counter + 1
-            allShortestPathsCopy <- allShortestPathsCopy[-pos]
-            allShortestPathsCompleteCopy <- allShortestPathsCompleteCopy[-pos]
-          }
-        }
+        partialShortestPaths[counter] <- allShortestPathsComplete[ set[[i]]]
+        counter <- counter + 1
+        allShortestPathsCompleteCopy <- allShortestPathsCompleteCopy[ -set[[ length( set) - i + 1]]]
       }
     }
     # cover rate function
-    percentage[[vector]] <- ( counter - 1)/length( allShortestPaths)
+    percentage[[vector]] <- ( counter - 1)/length( allShortestPathsComplete)
     # print( percentage)
   }
   
   return( percentage)
 }
-
+compiledCoverRateFunction <- cmpfun( coverRateFunction)
 
 # create sorted dataframe based on highest betweenness
 # returns a dataframe
@@ -219,7 +204,7 @@ plotCoverRateFunction <- function( g, HBF, HDF, HCF, PCI, fname) {
 plotNumberOfCheckInNodes <- function ( g, numberOfNodes, CheckInNodesHBF, CheckInNodesHDF, CheckInNodesHCF, CheckInNodesPCI, fname){
                             
   png( filename = fname)
-  plot( 0, main = "Number of check in nodes",  xlab = "Vertices", xlim = c( 0,length( V( g))), ylim = c( 0,length( V( g))))
+  plot( 1, main = "Number of check in nodes",  xlab = "Vertices", xlim = c( 0,length( V( g))), ylim = c( 0,length( V( g))))
   lines( numberOfNodes, CheckInNodesHBF, col = "blue")
   lines( numberOfNodes, CheckInNodesHDF, col = "red")
   lines( numberOfNodes, CheckInNodesHCF, col = "green")
@@ -246,10 +231,10 @@ resultsToFile <- function( numberOfNodes, CheckInNodesHBF, CheckInNodesHDF, Chec
 
 
 # plot the cover rate function for each centrality
-plotTheCoverRateForEachCentrality <- function( g, centrality, BA, RA, fname) {
+plotTheCoverRateForEachCentrality <- function( g, centrality, BA, RA, title, fname) {
   
   png( filename = fname)
-  plot( V( g), main = "Cover rate Function for",  xlab = "Vertices", ylab = "Percentage",   ylim = c( 0:1))
+  plot( V( g), main = title,  xlab = "Vertices", ylab = "Percentage",   ylim = c( 0:1))
   lines( V( g), BA, col = "blue")
   lines( V( g), RA, col = "red")
   legend( "bottomright", c( "BA", "RA"), lty = c( 1, 1), lwd = c( 2, 2),col = c( "blue", "red"))
