@@ -9,7 +9,7 @@ calculatePCI <- function( g, m) {
   PCI = list( )
   
   for( v in V( g)) {
-    neighbors <- neighbors( g, v, "in")
+    neighbors <- neighbors( g, v, "all")
     
     Nodedegrees <- list( )
     for( n in neighbors) {      Nodedegrees <-  c( Nodedegrees, degree( g, n, mode = m))    }
@@ -49,7 +49,6 @@ coverRateFunction <- function( g, allShortestPathsComplete, df) {
   
 
   allShortestPathsCompleteCopy <- allShortestPathsComplete
-  partialShortestPaths <- vector( "list", length( allShortestPathsComplete))
   percentage <- vector( "list", length( V( g)))
   counter <- 1
   for( vector in V( g)) {
@@ -67,7 +66,6 @@ coverRateFunction <- function( g, allShortestPathsComplete, df) {
     
     if( length( set) > 0) {
       for( i in 1:length( set)) {
-        partialShortestPaths[counter] <- allShortestPathsComplete[ set[[i]]]
         counter <- counter + 1
         allShortestPathsCompleteCopy <- allShortestPathsCompleteCopy[ -set[[ length( set) - i + 1]]]
       }
@@ -83,9 +81,10 @@ compiledCoverRateFunction <- cmpfun( coverRateFunction)
 
 # create sorted dataframe based on highest betweenness
 # returns a dataframe
-createSortedHBFDataframe <- function( g) {
+createSortedHBFDataframe <- function( g, d) {
   
-  betweennessCentrality <- betweenness( g, v = V( g), directed = TRUE)
+  print( d)
+  betweennessCentrality <- betweenness( g, v = V( g), directed = d)
   vectroIds <- vector( mode = "numeric", length = length( betweennessCentrality))
   vectorBetweenness <- vector( mode = "numeric", length = length( betweennessCentrality))
   for( i in V( g)) {
@@ -101,9 +100,12 @@ createSortedHBFDataframe <- function( g) {
 
 # create sorted dataframe based on highest degree
 # returns a dataframe
-createSortedHDFDataframe <- function( g) {
+createSortedHDFDataframe <- function( g, d) {
   
-  degreeCentrality <- degree( g, v = V( g), mode = c( "in"))
+  if( d == "directed" ){    m <- "in"}
+  else { m <- "all"}
+  
+  degreeCentrality <- degree( g, v = V( g), mode = m)
   vectroIds <- vector( mode = "numeric", length = length( degreeCentrality))
   vectorDegree <- vector( mode = "numeric", length = length( degreeCentrality))
   for( i in V( g)) {
@@ -119,9 +121,12 @@ createSortedHDFDataframe <- function( g) {
 
 # create sorted dataframe based on highest closenness
 # returns a dataframe
-createSortedHCFDataframe <- function( g) {
+createSortedHCFDataframe <- function( g, d) {
   
-  closenessCentrality <- closeness( g, v = V( g), mode = c( "in"))
+  if( d == "directed" ){    m <- "in"}
+  else { m <- "all"}
+  
+  closenessCentrality <- closeness( g, v = V( g), mode = m)
   vectroIds <- vector( mode = "numeric", length = length( closenessCentrality))
   vectorCloseness <- vector( mode = "numeric", length = length( closenessCentrality))
   for( i in V( g)) {
@@ -137,9 +142,12 @@ createSortedHCFDataframe <- function( g) {
 
 # create sorted dataframe based on highest PCI
 # returns a dataframe
-createSortedHPCIDataframe <- function( g) {
+createSortedHPCIDataframe <- function( g, d) {
   
-  PCI <- calculatePCI( g, "all")
+  if( d == "directed" ){    m <- "in"}
+  else { m <- "all"}
+  
+  PCI <- calculatePCI( g, m)
   vectroIds <- vector( mode = "numeric", length = length( PCI))
   vectorPCI <- vector( mode = "numeric", length = length( PCI))
   for( i in V( g)) {
