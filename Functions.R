@@ -83,8 +83,10 @@ compiledCoverRateFunction <- cmpfun( coverRateFunction)
 # returns a dataframe
 createSortedHBFDataframe <- function( g, d) {
   
-  print( d)
-  betweennessCentrality <- betweenness( g, v = V( g), directed = d)
+  if( d == "directed") {    m = "directed"  }
+  else {    m = "undirected"  }
+  
+  betweennessCentrality <- betweenness( g, v = V( g), directed = m)
   vectroIds <- vector( mode = "numeric", length = length( betweennessCentrality))
   vectorBetweenness <- vector( mode = "numeric", length = length( betweennessCentrality))
   for( i in V( g)) {
@@ -161,20 +163,43 @@ createSortedHPCIDataframe <- function( g, d) {
 }
 
 
+# create sorted dataframe based on highest betweenness
+# returns a dataframe
+createSortedHkShellDataframe <- function( g, d) {
+  
+  if( d == "directed" ){    m <- "in"}
+  else { m <- "all"}
+  
+  kShellCentrality <- coreness( g, mode = m)
+  vectroIds <- vector( mode = "numeric", length = length( kShellCentrality))
+  vectorBetweenness <- vector( mode = "numeric", length = length( kShellCentrality))
+  for( i in V( g)) {
+    vectroIds[i] <- i
+    vectorBetweenness[i] <- kShellCentrality[[i]]
+  }
+  df <- data.frame( vectroIds, vectorBetweenness)
+  df <- df[ order( -df[,2] ), ]
+  
+  return( df)
+}
+
+
 # get the mean results
 # return a list of lists HBF - HDF - HCF - PCI
-getMeanValues <- function( g, HBFcoverRate, HDFcoverRate, HCFcoverRate, PCIcoverRate) {
+getMeanValues <- function( g, HBFcoverRate, HDFcoverRate, HCFcoverRate, PCIcoverRate, kShellcoverRate) {
   
   HBF <- list( length( V( g)))
   HDF <- list( length( V( g)))
   HCF <- list( length( V( g)))
   PCI <- list( length( V( g)))
+  kShell  <- list( length( V( g)))
   
   for( i in 1:length( V( g))) {
     HBF[[i]] <- 0
     HDF[[i]] <- 0
     HCF[[i]] <- 0
     PCI[[i]] <- 0
+    kShell[[i]] <- 0
   }
   for( i in 1:iter) {
     for( j in 1:length( V( g))) {
@@ -182,6 +207,7 @@ getMeanValues <- function( g, HBFcoverRate, HDFcoverRate, HCFcoverRate, PCIcover
       HDF[[ j]] <- HDF[[ j]] + HDFcoverRate[[ i]][[ j]]
       HCF[[ j]] <- HCF[[ j]] + HCFcoverRate[[ i]][[ j]]
       PCI[[ j]] <- PCI[[ j]] + PCIcoverRate[[ i]][[ j]]
+      kShell[[ j]] <- kShell[[ j]] + kShellcoverRate[[ i]][[ j]]
     }
   }
   for( i in 1:length( V( g))) {
@@ -189,27 +215,29 @@ getMeanValues <- function( g, HBFcoverRate, HDFcoverRate, HCFcoverRate, PCIcover
     HDF[[i]] <- HDF[[i]] /iter
     HCF[[i]] <- HCF[[i]] /iter
     PCI[[i]] <- PCI[[i]] /iter
+    kShell[[i]] <- kShell[[i]] /iter
   }
   
-  return( list( HBF, HDF, HCF, PCI))
+  return( list( HBF, HDF, HCF, PCI, kShell))
 }
 
 
 # plots the results of the cover rate functions
-plotCoverRateFunction <- function( g, HBF, HDF, HCF, PCI, fname) {
+plotCoverRateFunction <- function( g, HBF, HDF, HCF, PCI, kShell, fname) {
   png( filename = fname)
   plot( V( g), main = "Cover Rate Function",  xlab = "Vertices", ylab = "Percentage",   ylim = c( 0:1))
   lines( V( g), HBF, col = "blue")
   lines( V( g), HDF, col = "red")
   lines( V( g), HCF, col = "green")
   lines( V( g), PCI, col = "black")
-  legend( "bottomright", c( "HBF", "HDF", "HCF", "PCI"), lty = c( 1, 1), lwd = c( 2, 2),col = c( "blue", "red", "green", "black"))
+  lines( V( g), kShell, col = "yellow")
+  legend( "bottomright", c( "HBF", "HDF", "HCF", "PCI", "kShell"), lty = c( 1, 1), lwd = c( 2, 2),col = c( "blue", "red", "green", "black", "yellow"))
   dev.off()
 }
 
 
 # plots the number of check ing nodes for every centrality
-plotNumberOfCheckInNodes <- function ( g, numberOfNodes, CheckInNodesHBF, CheckInNodesHDF, CheckInNodesHCF, CheckInNodesPCI, fname){
+plotNumberOfCheckInNodes <- function ( g, numberOfNodes, CheckInNodesHBF, CheckInNodesHDF, CheckInNodesHCF, CheckInNodesPCI, CheckInNodeskShell, fname){
                             
   png( filename = fname)
   plot( 1, main = "Number of check in nodes",  xlab = "Vertices", xlim = c( 0,length( V( g))), ylim = c( 0,length( V( g))))
@@ -217,13 +245,14 @@ plotNumberOfCheckInNodes <- function ( g, numberOfNodes, CheckInNodesHBF, CheckI
   lines( numberOfNodes, CheckInNodesHDF, col = "red")
   lines( numberOfNodes, CheckInNodesHCF, col = "green")
   lines( numberOfNodes, CheckInNodesPCI, col = "black")
-  legend( "bottomright", c( "HBF", "HDF", "HCF", "PCI"), lty = c( 1, 1), lwd = c( 2, 2),col = c( "blue", "red", "green", "black"))
+  lines( numberOfNodes, CheckInNodeskShell, col = "brown")
+  legend( "bottomright", c( "HBF", "HDF", "HCF", "PCI", "kShell"), lty = c( 1, 1), lwd = c( 2, 2),col = c( "blue", "red", "green", "black", "brown"))
   dev.off()
 }
 
 
 # extract the results to file
-resultsToFile <- function( numberOfNodes, CheckInNodesHBF, CheckInNodesHDF, CheckInNodesHCF, CheckInNodesPCI, fname) {
+resultsToFile <- function( numberOfNodes, CheckInNodesHBF, CheckInNodesHDF, CheckInNodesHCF, CheckInNodesPCI, CheckInNodeskShell, edges, avDegree, fname) {
   
   lapply( "number Of nodes ", write, toString( fname), append = FALSE)
   lapply( numberOfNodes, write, toString( fname), append = TRUE)
@@ -235,6 +264,12 @@ resultsToFile <- function( numberOfNodes, CheckInNodesHBF, CheckInNodesHDF, Chec
   lapply( CheckInNodesHCF, write, toString( fname), append = TRUE)
   lapply( "numberOfCheckInNodesPCI", write, toString( fname), append = TRUE)
   lapply( CheckInNodesPCI, write, toString( fname), append = TRUE)
+  lapply( "numberOfCheckInNodeskShell", write, toString( fname), append = TRUE)
+  lapply( CheckInNodeskShell, write, toString( fname), append = TRUE)
+  lapply( "Number of edges", write, toString( fname), append = TRUE)
+  lapply( edges, write, toString( fname), append = TRUE)
+  lapply( "Average Degree", write, toString( fname), append = TRUE)
+  lapply( avDegree, write, toString( fname), append = TRUE)
 }
 
 
